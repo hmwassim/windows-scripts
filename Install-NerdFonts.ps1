@@ -17,7 +17,18 @@ param (
 # Font list
 $Fonts = @(
     "JetBrainsMono",
-    "FiraCode"
+    "FiraCode",
+    "Hack",
+    "CascadiaCode",
+    "SourceCodePro",
+    "RobotoMono",
+    "Meslo",
+    "UbuntuMono",
+    "Inconsolata",
+    "VictorMono",
+    "Mononoki",
+    "Terminus",
+    "Lilex"
 )
 
 # Ensure download folder exists
