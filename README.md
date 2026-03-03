@@ -1,55 +1,141 @@
 # windows-scripts
-Some useful scripts for windows users
-# windows-scripts
 
-Some useful scripts for Windows users.
+A collection of PowerShell scripts to fully set up a fresh Windows LTSC (or any clean Windows) install for **gaming, content creation, and development** — no Microsoft Store required.
 
-## Install winget on LTSC (no MS Store)
+---
 
-Use the included PowerShell script `Install-Winget-LTSC.ps1` to install the Microsoft "App Installer" (winget) on Windows LTSC builds or other systems without the Microsoft Store. The script downloads the latest MSIX bundle from the official winget (App Installer) GitHub releases and installs it.
+## What it does
 
-Usage (run in an elevated PowerShell prompt):
+| Step | Script | Run as | Description |
+|------|--------|--------|-------------|
+| 0 | `Install-Winget.ps1` | Admin | Installs winget from GitHub (no Store needed) |
+| 1 | `Install-Runtimes.ps1` | Admin | VCRedist, .NET, DirectX, WebView2, XNA, .NET 3.5 |
+| 2 | `Set-Tweaks.ps1` | Admin | Classic context menu, Explorer defaults, power plan |
+| 3 | `Install-Dev.ps1` | **User** | PS7 (interactive), Terminal, eza, Starship, PS profile |
 
-```powershell
-# From this repo folder
-.\Install-Winget-LTSC.ps1
+---
 
-# Force reinstall if winget already exists
-.\Install-Winget-LTSC.ps1 -Force
-```
+## Quick start
 
-Notes:
-- The script will re-launch itself with elevation if not already running as Administrator.
-- You may need to sign out/in or reboot after installation for the `winget` command to be available.
+> **On LTSC** PowerShell 7 is not pre-installed — open **Windows PowerShell** (the built-in one) as Administrator.
 
-## Install Nerd Fonts
-
-`Install-NerdFonts.ps1` downloads a curated list of Nerd Fonts from the official repo releases and can optionally install them to `C:\Windows\Fonts`.
-
-Behavior and flags:
-- `-InstallFonts` (switch): If supplied, the script copies font files into `C:\Windows\Fonts` and registers them in the registry (requires Administrator privileges). If omitted, the script only downloads and extracts the fonts into your Downloads folder (default).
-- `-Force` (switch): When installing, overwrite existing font files without prompting. If not supplied, the script prompts before overwriting existing font files and keeps a timestamped backup of any overwritten file.
-- `-Version` (string): Release tag to download (default `v3.4.0`).
-- `-DownloadPath` (string): Destination folder for downloaded font folders (default: `$env:USERPROFILE\Downloads\NerdFonts`).
-
-PowerShell safety support:
-- The script uses `SupportsShouldProcess` so you can run it with `-WhatIf` and `-Confirm`.
-- When installing, it requires Administrator privileges and will exit with an error if not elevated.
-
-Examples:
+**Step 1 – Admin setup** (runtimes + tweaks). Open **Windows PowerShell as Administrator**:
 
 ```powershell
-# Download fonts only (no elevation required)
-.\Install-NerdFonts.ps1
-
-# Download and install system-wide (run PowerShell as Administrator)
-.\Install-NerdFonts.ps1 -InstallFonts
-
-# Download a different release to a specific path
-.\Install-NerdFonts.ps1 -Version "v3.3.0" -DownloadPath "D:\Fonts\NerdFonts"
+Set-ExecutionPolicy Bypass -Scope Process -Force
+irm https://raw.githubusercontent.com/habibimedwassim/windows-scripts/main/setup.ps1 | iex
 ```
 
-Notes:
-- Installing fonts system-wide requires running PowerShell as Administrator. The script will report how many fonts were installed, skipped, or failed.
-- The script creates a temporary extraction folder under `$env:TEMP` and cleans it up after completion.
-- If a font folder already exists in the destination, the script skips downloading that font.
+The setup script asks upfront whether to enable the Microsoft Store (`wsreset -i`, no ISO needed — required for Xbox Game Bar). It then handles winget install if missing, all runtimes, and system tweaks.
+
+**Step 2 – Shell setup** (run as your normal user, not elevated):
+
+```powershell
+Set-ExecutionPolicy Bypass -Scope Process -Force
+.\scripts\Install-Dev.ps1
+```
+
+This launches the PS7 MSI interactively (so you can uncheck telemetry and the Windows Update auto-update option), then silently installs Windows Terminal, eza, and Starship, and deploys your PowerShell profile.
+
+---
+
+## Scripts
+
+### `setup.ps1`
+
+The admin entry point. Runs cleanly from a remote `irm … | iex` one-liner or from a local clone. Flow:
+
+1. Prompts to enable the Microsoft Store via `wsreset -i` (no ISO, pulls from Windows Component Store)
+2. Installs winget if missing
+3. Presents a menu:
+
+```
+0  Full setup  (both steps below)
+1  Runtimes    – VCRedist, .NET, DirectX, WebView2, XNA, .NET Framework 3.5
+2  Tweaks      – Classic context menu, Explorer defaults, power plan, accessibility
+```
+
+At the end it prints instructions to run `Install-Dev.ps1` as a normal user.
+
+---
+
+### `scripts/Install-Winget.ps1`
+
+Installs [winget](https://github.com/microsoft/winget-cli) on machines that don't have it (LTSC, Server, Sandbox). Downloads:
+
+- `Microsoft.VCLibs.x64.14.00.Desktop.appx` (via `aka.ms` redirect)
+- `Microsoft.UI.Xaml 2.8` (from NuGet, no Store required)
+- Latest `Microsoft.DesktopAppInstaller` msixbundle from the GitHub release
+
+---
+
+### `scripts/Install-Runtimes.ps1`
+
+Installs all common runtimes that games and apps depend on:
+
+- Visual C++ Redistributables (2005, 2008, 2010, 2012, 2013, 2015+) — x86 & x64
+- .NET Desktop Runtime (3.1, 5, 6, 7, 8, 9, 10)
+- .NET Framework 3.5 (via DISM)
+- Windows App Runtime 1.8
+- Microsoft Edge WebView2 Runtime
+- DirectX End-User Runtime
+- OpenAL (`OpenAL.OpenAL`)
+- Xbox Game Bar (`9NZKPSTSNW4P`) *(requires msstore source — may not be available on LTSC)*
+- XNA Framework 4.0 (`Microsoft.XNARedist` via winget)
+
+---
+
+### `scripts/Install-Dev.ps1`
+
+> **Run as your normal user — not as Administrator.**  
+> winget installs user-scoped by default when not elevated, which is correct for these tools. The script will refuse to run if it detects an elevated session.
+
+Installs the base shell environment:
+
+- **PowerShell 7** — launched via `winget install -i` (interactive MSI) so you can uncheck telemetry and the "update via Windows Update" option
+- **Windows Terminal**
+- **eza** (modern `ls`)
+- **Starship** prompt
+- Deploys `profile/Microsoft.PowerShell_profile.ps1` to both the PS7 and WinPS5 profile paths
+
+---
+
+### `scripts/Set-Tweaks.ps1`
+
+Registry and system tweaks (requires Admin):
+
+- **Classic context menu** — restores the Windows 10-style right-click menu
+- Show file extensions in Explorer
+- Show hidden files and folders
+- Disable Sticky / Filter / Toggle key prompts
+- Disable mouse enhance pointer precision (acceleration)
+- Disable Game DVR / background recording (eats CPU/GPU even when idle)
+- Enable Hardware-Accelerated GPU Scheduling (HAGS) — GTX 1000+ / RX 5000+, takes effect after reboot
+- Set power plan to High Performance
+
+---
+
+### `profile/Microsoft.PowerShell_profile.ps1`
+
+Configures `eza`-based `ls` aliases and initialises the Starship prompt.  
+Installed automatically by `Install-Dev.ps1`, or copy it manually to:
+
+```
+%USERPROFILE%\Documents\PowerShell\Microsoft.PowerShell_profile.ps1
+```
+
+---
+
+## Notes
+
+- `setup.ps1` and all `Install-Runtimes` / `Set-Tweaks` / `Install-Winget` scripts require **Administrator** privileges.
+- `Install-Dev.ps1` must be run as a **normal user** (it will refuse to run elevated).
+- Scripts are designed to be idempotent — safe to re-run; winget will skip already-installed packages.
+- `irm … | iex` downloads each sub-script from GitHub at runtime so no local clone is needed on a bare machine.
+- This repo intentionally does **not** install opinionated apps (editors, browsers, games, etc.). It is a base layer — install whatever you want on top.
+
+---
+
+## License
+
+MIT
