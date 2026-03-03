@@ -67,7 +67,6 @@ Write-Header "PowerShell Profile"
 # Use the shell-resolved Documents folder so redirected/OneDrive paths work correctly
 $myDocs     = [System.Environment]::GetFolderPath('MyDocuments')
 $ps7Profile = "$myDocs\PowerShell\Microsoft.PowerShell_profile.ps1"
-$ps5Profile = "$myDocs\WindowsPowerShell\Microsoft.PowerShell_profile.ps1"
 
 $runFromWeb = ($PSScriptRoot -eq '' -or $null -eq $PSScriptRoot)
 
@@ -88,12 +87,10 @@ if ($runFromWeb) {
 }
 
 if ($srcProfile) {
-    foreach ($dest in @($ps7Profile, $ps5Profile)) {
-        $destDir = Split-Path $dest
-        if (-not (Test-Path $destDir)) { New-Item -ItemType Directory -Path $destDir -Force | Out-Null }
-        Copy-Item -Path $srcProfile -Destination $dest -Force
-        Write-Ok "Profile copied to $dest"
-    }
+    $destDir = Split-Path $ps7Profile
+    if (-not (Test-Path $destDir)) { New-Item -ItemType Directory -Path $destDir -Force | Out-Null }
+    Copy-Item -Path $srcProfile -Destination $ps7Profile -Force
+    Write-Ok "Profile copied to $ps7Profile"
 }
 
 # Refresh PATH so eza/starship are usable immediately in this session
