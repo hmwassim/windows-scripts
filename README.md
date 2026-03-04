@@ -9,8 +9,8 @@ A collection of PowerShell scripts to fully set up a fresh Windows LTSC (or any 
 | Step | Script | Run as | Description |
 |------|--------|--------|-------------|
 | 0 | `Install-Winget.ps1` | Admin | Installs winget from GitHub (no Store needed) |
-| 1 | `Install-Runtimes.ps1` | Admin | VCRedist, .NET, DirectX, WebView2, XNA, .NET 3.5 |
-| 2 | `Set-Tweaks.ps1` | Admin | Classic context menu, Explorer defaults, power plan |
+| 1 | `Install-Runtimes.ps1` | Admin | VCRedist, .NET, DirectX, WebView2, XNA, 7-Zip, codecs |
+| 2 | `Set-Tweaks.ps1` | Admin | Classic context menu, Explorer defaults, accessibility |
 | 3 | `Install-Dev.ps1` | **User** | PS7 (interactive), Terminal, eza, Starship, PS profile |
 
 ---
@@ -26,16 +26,16 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 irm https://raw.githubusercontent.com/habibimedwassim/windows-scripts/main/setup.ps1 | iex
 ```
 
-The setup script asks upfront whether to enable the Microsoft Store (`wsreset -i`, no ISO needed — required for Xbox Game Bar). It then handles winget install if missing, all runtimes, and system tweaks.
+The script shows a summary of everything that will be installed and applied, then asks you to confirm with **Y/N** before proceeding. It handles winget install if missing, all runtimes, and system tweaks.
 
 **Step 2 – Shell setup** (run as your normal user, not elevated):
 
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process -Force
-.\scripts\Install-Dev.ps1
+irm https://raw.githubusercontent.com/habibimedwassim/windows-scripts/main/setup.ps1 | iex
 ```
 
-This launches the PS7 MSI interactively (so you can uncheck telemetry and the Windows Update auto-update option), then silently installs Windows Terminal, eza, and Starship, and deploys your PowerShell profile.
+The script shows the list of tools that will be installed and asks for **Y/N** confirmation. It launches the PS7 MSI interactively (so you can uncheck telemetry and the Windows Update auto-update option), then silently installs Windows Terminal, eza, and Starship, and deploys your PowerShell profile.
 
 ---
 
@@ -43,19 +43,42 @@ This launches the PS7 MSI interactively (so you can uncheck telemetry and the Wi
 
 ### `setup.ps1`
 
-The admin entry point. Runs cleanly from a remote `irm … | iex` one-liner or from a local clone. Flow:
+The entry point. Runs cleanly from a remote `irm … | iex` one-liner or from a local clone. Automatically detects whether it is running elevated or not:
 
-1. Prompts to enable the Microsoft Store via `wsreset -i` (no ISO, pulls from Windows Component Store)
-2. Installs winget if missing
-3. Presents a menu:
+**As Administrator** — shows a bullet-point summary and asks **Y/N**:
 
 ```
-0  Full setup  (both steps below)
-1  Runtimes    – VCRedist, .NET, DirectX, WebView2, XNA, .NET Framework 3.5
-2  Tweaks      – Classic context menu, Explorer defaults, power plan, accessibility
+Runtimes:
+  - VC++ Redistributables (2005-2022)
+  - .NET Desktop Runtimes
+  - Windows App Runtime
+  - Edge WebView2 Runtime
+  - DirectX End-User Runtime
+  - OpenAL
+  - XNA Framework 4.0
+  - 7-Zip
+  - K-Lite Codec Pack
+
+Tweaks:
+  - Classic right-click menu
+  - Show file extensions
+  - Show hidden files
+  - Disable accessibility hotkeys
+  - Disable mouse acceleration
 ```
 
-At the end it prints instructions to run `Install-Dev.ps1` as a normal user.
+**As Normal User** — shows the dev/shell tools and asks **Y/N**:
+
+```
+Dev / Shell Tools:
+  - PowerShell 7
+  - Windows Terminal
+  - eza (modern ls)
+  - Starship prompt
+  - PowerShell profile
+```
+
+At the end of the admin path it prints instructions to re-run as a normal user.
 
 ---
 
@@ -75,13 +98,13 @@ Installs all common runtimes that games and apps depend on:
 
 - Visual C++ Redistributables (2005, 2008, 2010, 2012, 2013, 2015+) — x86 & x64
 - .NET Desktop Runtime (3.1, 5, 6, 7, 8, 9, 10)
-- .NET Framework 3.5 (via DISM)
 - Windows App Runtime 1.8
 - Microsoft Edge WebView2 Runtime
 - DirectX End-User Runtime
-- OpenAL (`OpenAL.OpenAL`)
-- Xbox Game Bar (`9NZKPSTSNW4P`) *(requires msstore source — may not be available on LTSC)*
-- XNA Framework 4.0 (`Microsoft.XNARedist` via winget)
+- OpenAL
+- XNA Framework 4.0
+- 7-Zip
+- K-Lite Codec Pack Standard
 
 ---
 
@@ -96,7 +119,7 @@ Installs the base shell environment:
 - **Windows Terminal**
 - **eza** (modern `ls`)
 - **Starship** prompt
-- Deploys `profile/Microsoft.PowerShell_profile.ps1` to both the PS7 and WinPS5 profile paths
+- Deploys `profile/Microsoft.PowerShell_profile.ps1` to the PS7 profile path
 
 ---
 
@@ -109,9 +132,6 @@ Registry and system tweaks (requires Admin):
 - Show hidden files and folders
 - Disable Sticky / Filter / Toggle key prompts
 - Disable mouse enhance pointer precision (acceleration)
-- Disable Game DVR / background recording (eats CPU/GPU even when idle)
-- Enable Hardware-Accelerated GPU Scheduling (HAGS) — GTX 1000+ / RX 5000+, takes effect after reboot
-- Set power plan to High Performance
 
 ---
 
@@ -129,7 +149,7 @@ Installed automatically by `Install-Dev.ps1`, or copy it manually to:
 ## Notes
 
 - `setup.ps1` and all `Install-Runtimes` / `Set-Tweaks` / `Install-Winget` scripts require **Administrator** privileges.
-- `Install-Dev.ps1` must be run as a **normal user** (it will refuse to run elevated).
+- `Install-Dev.ps1` should be run as a **normal user** (installs per-user by default).
 - Scripts are designed to be idempotent — safe to re-run; winget will skip already-installed packages.
 - `irm … | iex` downloads each sub-script from GitHub at runtime so no local clone is needed on a bare machine.
 - This repo intentionally does **not** install opinionated apps (editors, browsers, games, etc.). It is a base layer — install whatever you want on top.
