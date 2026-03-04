@@ -77,15 +77,33 @@ function Get-Script {
 # ══════════════════════════════════════════════════════════════════════════════
 if ($isAdmin) {
 
-    # ── Menu ──────────────────────────────────────────────────────────────────
-    Write-Host "  What would you like to set up? (comma-separated, or 0 for everything)`n" -ForegroundColor Yellow
-    Write-Host "    0  Full setup  (both steps below)"
-    Write-Host "    1  Runtimes    - VCRedist, .NET, DirectX, WebView2, XNA, 7-Zip, codecs"
-    Write-Host "    2  Tweaks      - Classic context menu, Explorer defaults, accessibility"
+    # ── Show what will be done ────────────────────────────────────────────────
+    Write-Host "  The following will be installed and applied:" -ForegroundColor Yellow
     Write-Host ""
-    $raw     = Read-Host "  Choice"
-    $choices = $raw -split ',' | ForEach-Object { $_.Trim() }
-    $doAll   = $choices -contains '0'
+    Write-Host "  Runtimes:" -ForegroundColor Magenta
+    Write-Host "    - VC++ Redistributables (2005-2022)"
+    Write-Host "    - .NET Desktop Runtimes"
+    Write-Host "    - Windows App Runtime"
+    Write-Host "    - Edge WebView2 Runtime"
+    Write-Host "    - DirectX End-User Runtime"
+    Write-Host "    - OpenAL"
+    Write-Host "    - XNA Framework 4.0"
+    Write-Host "    - 7-Zip"
+    Write-Host "    - K-Lite Codec Pack"
+    Write-Host ""
+    Write-Host "  Tweaks:" -ForegroundColor Magenta
+    Write-Host "    - Classic right-click menu"
+    Write-Host "    - Show file extensions"
+    Write-Host "    - Show hidden files"
+    Write-Host "    - Disable accessibility hotkeys"
+    Write-Host "    - Disable mouse acceleration"
+    Write-Host ""
+
+    $confirm = Read-Host "  Proceed? (Y/N)"
+    if ($confirm -notin @('Y','y')) {
+        Write-Host "`n  Aborted." -ForegroundColor Red
+        exit 0
+    }
 
     # ── Install winget if missing ─────────────────────────────────────────────
     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
@@ -105,20 +123,16 @@ if ($isAdmin) {
     }
 
     # ── Step 1: Runtimes ──────────────────────────────────────────────────────
-    if ($doAll -or $choices -contains '1') {
-        Write-Host "`n  ════════════════════════════════════" -ForegroundColor DarkGray
-        Write-Host "  [1/2] Installing Runtimes..." -ForegroundColor Magenta
-        Write-Host "  ════════════════════════════════════" -ForegroundColor DarkGray
-        & (Get-Script 'Install-Runtimes.ps1')
-    }
+    Write-Host "`n  ════════════════════════════════════" -ForegroundColor DarkGray
+    Write-Host "  [1/2] Installing Runtimes..." -ForegroundColor Magenta
+    Write-Host "  ════════════════════════════════════" -ForegroundColor DarkGray
+    & (Get-Script 'Install-Runtimes.ps1')
 
     # ── Step 2: Tweaks ────────────────────────────────────────────────────────
-    if ($doAll -or $choices -contains '2') {
-        Write-Host "`n  ════════════════════════════════════" -ForegroundColor DarkGray
-        Write-Host "  [2/2] Applying Tweaks..." -ForegroundColor Magenta
-        Write-Host "  ════════════════════════════════════" -ForegroundColor DarkGray
-        & (Get-Script 'Set-Tweaks.ps1')
-    }
+    Write-Host "`n  ════════════════════════════════════" -ForegroundColor DarkGray
+    Write-Host "  [2/2] Applying Tweaks..." -ForegroundColor Magenta
+    Write-Host "  ════════════════════════════════════" -ForegroundColor DarkGray
+    & (Get-Script 'Set-Tweaks.ps1')
 
     # ── Done (admin) ──────────────────────────────────────────────────────────
     Write-Host ""
@@ -134,6 +148,24 @@ if ($isAdmin) {
 #  NORMAL USER PATH  –  dev tools & shell setup
 # ══════════════════════════════════════════════════════════════════════════════
 } else {
+
+    # ── Show what will be done ────────────────────────────────────────────────
+    Write-Host "  The following will be installed:" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "  Dev / Shell Tools:" -ForegroundColor Magenta
+    Write-Host "    - PowerShell 7"
+    Write-Host "    - Windows Terminal"
+    Write-Host "    - eza (modern ls)"
+    Write-Host "    - Starship prompt"
+    Write-Host "    - PowerShell profile"
+    Write-Host ""
+
+    $confirm = Read-Host "  Proceed? (Y/N)"
+    if ($confirm -notin @('Y','y')) {
+        Write-Host "`n  Aborted." -ForegroundColor Red
+        exit 0
+    }
+
     & (Get-Script 'Install-Dev.ps1')
 }
 
