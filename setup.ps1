@@ -72,6 +72,18 @@ function Get-Script {
     }
 }
 
+function Get-ProfileFile {
+    param([string]$name)
+    if ($runFromWeb) {
+        if (-not (Test-Path $tmpDir)) { New-Item -ItemType Directory $tmpDir -Force | Out-Null }
+        $dest = "$tmpDir\$name"
+        Invoke-WebRequest "$repoBase/profile/$name" -OutFile $dest
+        return $dest
+    } else {
+        return Join-Path $PSScriptRoot "profile\$name"
+    }
+}
+
 # ══════════════════════════════════════════════════════════════════════════════
 #  ADMIN PATH  –  winget, runtimes, tweaks
 # ══════════════════════════════════════════════════════════════════════════════
@@ -132,6 +144,10 @@ if ($isAdmin) {
     Write-Host "`n  ════════════════════════════════════" -ForegroundColor DarkGray
     Write-Host "  [2/2] Applying Tweaks..." -ForegroundColor Magenta
     Write-Host "  ════════════════════════════════════" -ForegroundColor DarkGray
+    # Pre-download .reg files so Set-Tweaks.ps1 can find them in $tmpDir / $PSScriptRoot
+    Get-ProfileFile 'windows_photo_viewer.reg'     | Out-Null
+    Get-ProfileFile 'windows_photo_viewer_undo.reg' | Out-Null
+
     & (Get-Script 'Set-Tweaks.ps1')
 
     # ── Done (admin) ──────────────────────────────────────────────────────────
