@@ -23,7 +23,7 @@ A collection of PowerShell scripts to fully set up a fresh Windows LTSC (or any 
 
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process -Force
-irm https://raw.githubusercontent.com/habibimedwassim/windows-scripts/main/setup.ps1 | iex
+irm https://raw.githubusercontent.com/hmwassim/windows-scripts/main/setup.ps1 | iex
 ```
 
 The script shows a summary of everything that will be installed and applied, then asks you to confirm with **Y/N** before proceeding. It handles winget install if missing, all runtimes, and system tweaks.
@@ -32,7 +32,7 @@ The script shows a summary of everything that will be installed and applied, the
 
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process -Force
-irm https://raw.githubusercontent.com/habibimedwassim/windows-scripts/main/setup.ps1 | iex
+irm https://raw.githubusercontent.com/hmwassim/windows-scripts/main/setup.ps1 | iex
 ```
 
 The script shows the list of tools that will be installed and asks for **Y/N** confirmation. It launches the PS7 MSI interactively (so you can uncheck telemetry and the Windows Update auto-update option), then silently installs Windows Terminal, eza, and Starship, and deploys your PowerShell profile.
